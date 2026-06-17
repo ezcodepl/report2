@@ -219,7 +219,7 @@ if ($selectedFile) {
                     <i data-lucide="shield-check" class="h-6 w-6"></i>
                 </div>
                 <div>
-                    <h1 class="font-bold text-slate-900 leading-none text-lg">Raporty z alertów SOC system Logsign</h1>
+                    <h1 class="font-bold text-slate-900 leading-none text-lg">Raporty z alertów SOC system Logsign - ver. 2.0</h1>
                     <span class="text-xs text-slate-400 font-medium font-mono">Status: Aktywny</span>
                 </div>
             </div>
