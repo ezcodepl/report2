@@ -83,6 +83,11 @@ if (file_exists($danePath)) {
     }
 }
 
+// Lista dat dostępnych w archiwum raportów. Używana przez kalendarz do podświetlenia dni z raportami.
+$availableReportDates = array_values(array_filter(array_keys($tree), function ($date) {
+    return preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)$date);
+}));
+
 // Jeśli użytkownik wybrał datę z archiwum, przenosimy znaleziony katalog na samą górę listy.
 if ($archiveDate !== '' && isset($tree[$archiveDate])) {
     $archiveDateFound = true;
@@ -157,6 +162,9 @@ if ($selectedFile) {
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pl.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -164,6 +172,41 @@ if ($selectedFile) {
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         .table-container { max-height: 520px; overflow-y: auto; }
+
+        .flatpickr-calendar { border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 18px 45px rgba(15, 23, 42, 0.14); font-family: 'Inter', sans-serif; overflow: hidden; }
+        .flatpickr-months { padding-top: 8px; }
+        .flatpickr-current-month { font-size: 14px; font-weight: 800; color: #0f172a; }
+        .flatpickr-weekday { color: #64748b; font-size: 11px; font-weight: 800; }
+        .flatpickr-day { border-radius: 10px; font-size: 12px; font-weight: 600; }
+        .flatpickr-day.has-report-day {
+            background: #dbeafe !important;
+            border-color: #2563eb !important;
+            color: #1e3a8a !important;
+            font-weight: 900 !important;
+            box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.18);
+        }
+        .flatpickr-day.has-report-day:hover {
+            background: #2563eb !important;
+            border-color: #2563eb !important;
+            color: #ffffff !important;
+        }
+        .flatpickr-day.has-report-day.selected,
+        .flatpickr-day.has-report-day.startRange,
+        .flatpickr-day.has-report-day.endRange {
+            background: #4f46e5 !important;
+            border-color: #4f46e5 !important;
+            color: #ffffff !important;
+        }
+        .flatpickr-day.today {
+            border-color: #f59e0b !important;
+            color: #92400e;
+        }
+        .flatpickr-day.prevMonthDay:not(.has-report-day),
+        .flatpickr-day.nextMonthDay:not(.has-report-day),
+        .flatpickr-day:not(.has-report-day) {
+            color: #94a3b8;
+        }
+        .report-date-legend-dot { display: inline-block; width: 9px; height: 9px; border-radius: 9999px; background: #bfdbfe; border: 1px solid #2563eb; }
     </style>
 </head>
 <body class="text-slate-800 antialiased">
@@ -176,7 +219,7 @@ if ($selectedFile) {
                     <i data-lucide="shield-check" class="h-6 w-6"></i>
                 </div>
                 <div>
-                    <h1 class="font-bold text-slate-900 leading-none text-lg">Raporty z alertów SOC system Logsign - ver. 2.0</h1>
+                    <h1 class="font-bold text-slate-900 leading-none text-lg">Raporty z alertów SOC system Logsign</h1>
                     <span class="text-xs text-slate-400 font-medium font-mono">Status: Aktywny</span>
                 </div>
             </div>
@@ -211,15 +254,21 @@ if ($selectedFile) {
                 </label>
                 <div class="flex gap-2">
                     <input
-                        type="date"
+                        type="text"
                         id="archive-date"
                         name="archive_date"
                         value="<?php echo htmlspecialchars($archiveDate); ?>"
+                        placeholder="Wybierz datę"
+                        autocomplete="off"
                         class="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                     >
                     <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-blue-500" title="Pokaż raporty z wybranej daty">
                         <i data-lucide="search" class="h-4 w-4"></i>
                     </button>
+                </div>
+                <div class="mt-2 flex items-center gap-2 text-[10px] font-bold text-slate-400">
+                    <span class="report-date-legend-dot"></span>
+                    Dni oznaczone kolorem zawierają raporty
                 </div>
                 <?php if ($archiveDate !== '' && !$archiveDateFound): ?>
                     <div class="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-800">
@@ -403,6 +452,25 @@ if ($selectedFile) {
     <!-- Skrypty obsługi interfejsu -->
     <script>
         lucide.createIcons();
+
+        const availableReportDates = <?php echo json_encode($availableReportDates, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+        const availableReportDateSet = new Set(availableReportDates || []);
+
+        if (typeof flatpickr !== 'undefined') {
+            flatpickr('#archive-date', {
+                locale: 'pl',
+                dateFormat: 'Y-m-d',
+                allowInput: true,
+                defaultDate: <?php echo json_encode($archiveDate !== '' ? $archiveDate : null, JSON_UNESCAPED_UNICODE); ?>,
+                onDayCreate: function(dObj, dStr, fp, dayElem) {
+                    const date = fp.formatDate(dayElem.dateObj, 'Y-m-d');
+                    if (availableReportDateSet.has(date)) {
+                        dayElem.classList.add('has-report-day');
+                        dayElem.setAttribute('title', 'Ten dzień zawiera raporty');
+                    }
+                }
+            });
+        }
 
         function toggleFolder(id) {
             const el = document.getElementById(id);
