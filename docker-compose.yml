@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  web:
+    image: nginx:latest
+    container_name: raport2-web
+    ports:
+      - "${APP_PORT:-8094}:80"
+    volumes:
+      - ./src:/var/www/html
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    restart: unless-stopped
+
+  app:
+    build: .
+    container_name: raport2-app
+    env_file:
+      - .env
+    volumes:
+      - ./src:/var/www/html
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.0
+    container_name: raport2-db
+    env_file:
+      - .env
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-raporty_db}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
+      MYSQL_USER: ${MYSQL_USER:-raport_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-raport_pass}
+    ports:
+      - "${MYSQL_EXTERNAL_PORT:-3309}:3306"
+    volumes:
+      - raport2_db_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
+    restart: unless-stopped
+
+volumes:
+  raport2_db_data:
