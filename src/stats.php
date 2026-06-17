@@ -288,7 +288,7 @@ $pdfExportData = [
     <div class="flex h-16 items-center justify-between px-6">
         <div class="flex items-center gap-3">
             <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-md shadow-indigo-200"><i data-lucide="database-zap" class="h-6 w-6"></i></div>
-            <div><h1 class="text-lg font-extrabold leading-none text-slate-900">Raporty 2.0 - Statystyki MySQL</h1><span class="text-xs font-semibold text-slate-400">Źródło: baza danych + archiwum HTML</span></div>
+            <div><h1 class="text-lg font-extrabold leading-none text-slate-900">Raporty z alertów SOC system Logsign - Statystyki MySQL ver. 2.0</h1><span class="text-xs font-semibold text-slate-400">Źródło: baza danych + archiwum HTML</span></div>
         </div>
         <div class="flex items-center gap-2">
             <a href="index.php" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50"><i data-lucide="layout-dashboard" class="h-4 w-4"></i> Dashboard</a>
@@ -310,9 +310,19 @@ $pdfExportData = [
                 <p class="mt-1 text-sm font-medium text-slate-500">Agregacja danych z importów zapisanych w MySQL za <?php echo h($periodLabel); ?>.</p>
             </div>
             <div class="flex flex-wrap gap-2">
-                <?php foreach (['3' => '3 dni', '7' => '7 dni', '30' => '30 dni', 'all' => 'Całość'] as $p => $label): ?>
-                    <a href="?period=<?php echo h($p); ?>" class="rounded-xl px-4 py-2 text-xs font-extrabold <?php echo $period === $p ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'; ?>"><?php echo h($label); ?></a>
-                <?php endforeach; ?>
+               <?php foreach (['3' => '3 dni', '7' => '7 dni', '30' => '30 dni', 'all' => 'Całość'] as $p => $label): ?>
+    <?php $isActivePeriod = ((string)$period === (string)$p); ?>
+
+    <a
+        href="stats.php?period=<?php echo h($p); ?>"
+        class="rounded-xl px-5 py-2.5 text-sm font-extrabold transition-all duration-200 <?php echo $isActivePeriod ? 'shadow-md ring-2 ring-indigo-200' : 'hover:bg-slate-200'; ?>"
+        style="<?php echo $isActivePeriod
+            ? 'background:#008080;color:#ffffff;'
+            : 'background:#f1f5f9;color:#334155;'; ?>"
+    >
+        <?php echo h($label); ?>
+    </a>
+<?php endforeach; ?>
             </div>
         </section>
 
